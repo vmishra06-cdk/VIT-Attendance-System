@@ -245,9 +245,13 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  const handleGoogleLogin = async () => {
+  const [inputEmail, setInputEmail] = useState("");
+
+  const handleGoogleLogin = async (e, directEmail = "") => {
+    if (e && e.preventDefault) e.preventDefault();
+    const targetEmail = directEmail || inputEmail;
     try {
-      const googleUser = await signInWithGoogle();
+      const googleUser = await signInWithGoogle(targetEmail);
       if (googleUser) {
         setUser(googleUser);
         localStorage.setItem("vit_google_user", JSON.stringify({
@@ -480,34 +484,68 @@ export default function App() {
         </div>
 
         {!user && !authLoading ? (
-          <div className="p-10 text-center my-6" style={{ background: "#fbf6e9", border: "1.5px solid #c9bd9e", borderRadius: "8px" }}>
+          <div className="p-8 sm:p-10 text-center my-6 max-w-lg mx-auto" style={{ background: "#fbf6e9", border: "1.5px solid #c9bd9e", borderRadius: "8px" }}>
             <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full" style={{ background: "#7a2e2e", color: "#f4ecd8" }}>
               <ShieldCheck size={36} />
             </div>
             <h2 className="text-3xl font-bold mb-2" style={{ fontFamily: "'Fraunces', serif", color: "#2a231a" }}>
-              Google Sign-In Required
+              Google Sign-In
             </h2>
-            <p className="text-sm max-w-md mx-auto mb-6" style={{ color: "#5a4f3d" }}>
-              Sign in securely with your Google account to manage your FFCS timetable, holidays, and 75% attendance projections.
+            <p className="text-sm mx-auto mb-6" style={{ color: "#5a4f3d" }}>
+              Sign in with your Google email address to manage your personal FFCS timetable, holidays, and 75% attendance projections.
             </p>
 
+            <form onSubmit={(e) => handleGoogleLogin(e, inputEmail)} className="space-y-4 max-w-sm mx-auto mb-6">
+              <div>
+                <label className="block text-left text-xs font-bold mb-1.5" style={{ fontFamily: "'JetBrains Mono', monospace", color: "#5a4f3d" }}>
+                  ENTER YOUR GOOGLE EMAIL ADDRESS
+                </label>
+                <LedgerInput
+                  type="email"
+                  required
+                  placeholder="e.g. student@gmail.com or name@vitstudent.ac.in"
+                  value={inputEmail}
+                  onChange={(e) => setInputEmail(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full flex items-center justify-center gap-3 px-6 py-3 font-bold text-sm shadow-md hover:shadow-lg transition-all"
+                style={{
+                  background: "#7a2e2e",
+                  color: "#f4ecd8",
+                  borderRadius: "4px",
+                  fontFamily: "'JetBrains Mono', monospace"
+                }}
+              >
+                <svg className="w-5 h-5 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                SIGN IN WITH GOOGLE EMAIL
+              </button>
+            </form>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#c9bd9e]"></div></div>
+              <div className="relative flex justify-center text-xs"><span className="px-2 bg-[#fbf6e9] text-[#8a7f6a]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>OR GOOGLE POPUP</span></div>
+            </div>
+
             <button
-              onClick={handleGoogleLogin}
-              className="inline-flex items-center gap-3 px-6 py-3 font-bold text-sm shadow-md hover:shadow-lg transition-all"
+              onClick={() => handleGoogleLogin(null, "")}
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold transition-all"
               style={{
-                background: "#7a2e2e",
-                color: "#f4ecd8",
+                background: "transparent",
+                border: "1.5px solid #7a2e2e",
                 borderRadius: "4px",
+                color: "#7a2e2e",
                 fontFamily: "'JetBrains Mono', monospace"
               }}
             >
-              <svg className="w-5 h-5 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-              </svg>
-              SIGN IN WITH GOOGLE
+              Google OAuth Popup Sign-In
             </button>
           </div>
         ) : (

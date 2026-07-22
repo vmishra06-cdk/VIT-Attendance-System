@@ -1,0 +1,15 @@
+{
+  "short_name": "Attn Ledger",
+  "name": "VIT Attendance Ledger",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/school.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#efe6cf",
+  "theme_color": "#7a2e2e",
+  "display": "standalone"
+}

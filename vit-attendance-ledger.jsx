@@ -3,7 +3,7 @@ import {
   Calendar, BookOpen, Plus, Trash2, AlertTriangle, CheckCircle2,
   Sun, ClipboardList, ChevronRight, School, Stamp, Info, LogOut, User, ShieldCheck
 } from "lucide-react";
-import { auth, signInWithGoogle, logout } from "./src/firebase.js";
+import { auth, signInWithGoogle, logout, saveUserDataToCloud, loadUserDataFromCloud } from "./src/firebase.js";
 import { onAuthStateChanged } from "firebase/auth";
 
 if (typeof window !== "undefined" && !window.storage) {
@@ -275,11 +275,22 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     (async () => {
+      setLoaded(false);
       try {
-        const storageKey = `vit-ledger-data-${user.uid || "default"}`;
-        const r = await window.storage.get(storageKey);
-        if (r && r.value) {
-          const data = JSON.parse(r.value);
+        // 1. Try loading from Cloud Database
+        const cloudData = await loadUserDataFromCloud(user.uid);
+        let data = cloudData;
+
+        // 2. Fall back to local user database cache
+        if (!data) {
+          const storageKey = `vit-ledger-data-${user.uid || "default"}`;
+          const r = await window.storage.get(storageKey);
+          if (r && r.value) {
+            data = JSON.parse(r.value);
+          }
+        }
+
+        if (data) {
           if (data.settings) {
             setSettings({
               semStart: data.settings.semStart || "",
@@ -291,11 +302,19 @@ export default function App() {
               today: data.settings.today || todayISO(),
             });
           }
-          if (data.holidays) setHolidays(data.holidays);
-          if (data.saturdays) setSaturdays(data.saturdays);
-          if (data.courses) setCourses(data.courses);
+          if (data.holidays) setHolidays(data.holidays); else setHolidays([]);
+          if (data.saturdays) setSaturdays(data.saturdays); else setSaturdays([]);
+          if (data.courses) setCourses(data.courses); else setCourses([]);
+        } else {
+          // Reset fields for new user profile
+          setSettings({
+            semStart: "", cat1Start: "", cat1End: "", cat2Start: "", cat2End: "", lastInstructionalDay: "", today: todayISO()
+          });
+          setHolidays([]);
+          setSaturdays([]);
+          setCourses([]);
         }
-      } catch (e) { /* no saved data yet */ }
+      } catch (e) { /* error loading user db */ }
       setLoaded(true);
     })();
   }, [user]);
@@ -304,7 +323,10 @@ export default function App() {
     if (!loaded || !user) return;
     const data = { settings, holidays, saturdays, courses };
     const storageKey = `vit-ledger-data-${user.uid || "default"}`;
+    // Save to local user database
     window.storage.set(storageKey, JSON.stringify(data)).catch(() => {});
+    // Save to Cloud Database
+    saveUserDataToCloud(user.uid, data).catch(() => {});
   }, [settings, holidays, saturdays, courses, loaded, user]);
 
   const holidaySet = useMemo(() => new Set(holidays.map((h) => h.date)), [holidays]);
